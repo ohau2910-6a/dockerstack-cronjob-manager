@@ -1,20 +1,24 @@
 # ================================================================
-#  compose.apps.yml — Application Layer (cronjob-manager)
-#  Builds the monorepo app (backend + frontend) from ./services/app.
+# compose.apps.yml — Application Layer (cronjob-manager)
+# Builds the monorepo app (backend + frontend) from ./services/app.
 #
-#  Container "main-app" chạy 2 tiến trình:
-#    - backend : Fastify API + RTDB queue consumer (cổng nội bộ BACKEND_PORT)
-#    - frontend: Next.js dashboard (cổng public = APP_PORT), proxy → backend
+# Container "main-app" chạy 2 tiến trình:
+#  - backend : Fastify API + RTDB queue consumer (cổng nội bộ CRONJOB_MANAGER_BACKEND_PORT)
+#  - frontend: Next.js dashboard (cổng public = APP_PORT), proxy → backend
 #
-#  Subdomain: ${PROJECT_NAME}.${DOMAIN}
+# Subdomain: ${PROJECT_NAME}.${DOMAIN}
 #
-#  Minimal required env:
-#    APP_PORT       — Cổng frontend (public) lắng nghe trong container (3000)
-#    BACKEND_PORT   — Cổng backend nội bộ (8080)
-#    HEALTH_PATH    — /api/health-check (frontend → backend /health)
-#    API_SECRET     — bí mật giữa frontend↔backend (header x-api-secret)
-#    FIREBASE_*     — kết nối Firebase RTDB (service account / auth secret)
-#    PROJECT_NAME, DOMAIN, CADDY_EMAIL, TINYAUTH_*, LITESTREAM_*
+# NAMESPACE: mọi biến cấu hình của app dùng tiền tố CRONJOB_MANAGER_ (nạp qua
+# env_file ./.env). Biến hạ tầng của stack (APP_PORT, PROJECT_NAME, DOMAIN,
+# TINYAUTH_*, HEALTH_PATH, DOCKER_VOLUMES_ROOT...) GIỮ NGUYÊN.
+#
+# Minimal required env:
+#   APP_PORT                     — Cổng frontend (public) lắng nghe trong container (3000)
+#   CRONJOB_MANAGER_BACKEND_PORT — Cổng backend nội bộ (8080)
+#   HEALTH_PATH                  — /api/health-check (frontend → backend /health)
+#   CRONJOB_MANAGER_API_SECRET   — bí mật giữa frontend↔backend (header x-api-secret)
+#   CRONJOB_MANAGER_FIREBASE_*   — kết nối Firebase RTDB (service account / auth secret)
+#   PROJECT_NAME, DOMAIN, CADDY_EMAIL, TINYAUTH_*, LITESTREAM_*
 # ================================================================
 
 services:
@@ -30,7 +34,7 @@ services:
     environment:
       NODE_ENV: "${NODE_ENV:-production}"
       PORT: "${APP_PORT:-3000}"
-      BACKEND_PORT: "${BACKEND_PORT:-8080}"
+      CRONJOB_MANAGER_BACKEND_PORT: "${CRONJOB_MANAGER_BACKEND_PORT:-8080}"
     ports:
       - "127.0.0.1:${APP_HOST_PORT:-3000}:${APP_PORT:-3000}"
     volumes:
