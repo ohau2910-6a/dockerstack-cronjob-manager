@@ -1,29 +1,34 @@
 #!/bin/sh
 # ================================================================
-#  entrypoint.sh — chạy backend + frontend trong 1 container.
+# entrypoint.sh — chạy backend + frontend trong 1 container.
 #
-#  - backend : Fastify API + RTDB queue consumer, lắng nghe cổng nội bộ
-#              BACKEND_PORT (mặc định 8080), phục vụ localhost trong container.
-#  - frontend: Next.js, lắng nghe PORT (= APP_PORT compose inject, mặc định
-#              3000) — đây là cổng public sau Tinyauth.
-#  - Frontend proxy tới backend qua BACKEND_URL=http://127.0.0.1:${BACKEND_PORT}.
+# - backend : Fastify API + RTDB queue consumer, lắng nghe cổng nội bộ
+#             CRONJOB_MANAGER_BACKEND_PORT (mặc định 8080), phục vụ
+#             localhost trong container.
+# - frontend: Next.js, lắng nghe PORT (= APP_PORT compose inject, mặc định
+#             3000) — đây là cổng public sau Tinyauth.
+# - Frontend proxy tới backend qua BACKEND_URL=http://127.0.0.1:${BACKEND_PORT}.
 #
-#  Nếu backend hoặc frontend chết → container thoát để Docker restart (fail-fast).
+# NAMESPACE: mọi biến cấu hình của app dùng tiền tố CRONJOB_MANAGER_ để không
+# đụng với biến của docker-stack-template. PORT và BACKEND_URL là biến
+# runtime/nội bộ (entrypoint tự set), nên KHÔNG mang tiền tố.
+#
+# Nếu backend hoặc frontend chết → container thoát để Docker restart (fail-fast).
 # ================================================================
 set -e
 
-BACKEND_PORT="${BACKEND_PORT:-8080}"
+BACKEND_PORT="${CRONJOB_MANAGER_BACKEND_PORT:-8080}"
 FRONT_PORT="${PORT:-3000}"
 
-: "${API_SECRET:?API_SECRET is required}"
-export API_SECRET
+: "${CRONJOB_MANAGER_API_SECRET:?CRONJOB_MANAGER_API_SECRET is required}"
+export CRONJOB_MANAGER_API_SECRET
 export BACKEND_URL="http://127.0.0.1:${BACKEND_PORT}"
 
 echo "[entrypoint] starting backend on 127.0.0.1:${BACKEND_PORT} ..."
 (
   cd /app/backend
   PORT="${BACKEND_PORT}" \
-  EXEC_HANDLERS_DIR="${EXEC_HANDLERS_DIR:-/app/backend/handlers}" \
+  CRONJOB_MANAGER_EXEC_HANDLERS_DIR="${CRONJOB_MANAGER_EXEC_HANDLERS_DIR:-/app/backend/handlers}" \
   node dist/index.js
 ) &
 BACKEND_PID=$!
